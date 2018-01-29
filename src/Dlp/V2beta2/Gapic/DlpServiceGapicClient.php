@@ -21,8 +21,8 @@
  * https://github.com/google/googleapis/blob/master/google/privacy/dlp/v2beta2/dlp.proto
  * and updates to that file get reflected here through a refresh process.
  *
- * EXPERIMENTAL: this client library class has not yet been declared GA (1.0). This means that
- * even though we intent the surface to be stable, we may make backwards incompatible changes
+ * EXPERIMENTAL: This client library class has not yet been declared GA (1.0). This means that
+ * even though we intend the surface to be stable, we may make backwards incompatible changes
  * if necessary.
  *
  * @experimental
@@ -30,13 +30,14 @@
 
 namespace Google\Cloud\Dlp\V2beta2\Gapic;
 
-use Google\ApiCore\AgentHeaderDescriptor;
-use Google\ApiCore\ApiCallable;
-use Google\ApiCore\CallSettings;
-use Google\ApiCore\GrpcCredentialsHelper;
-use Google\ApiCore\PageStreamingDescriptor;
+use Google\ApiCore\ApiException;
+use Google\ApiCore\Call;
+use Google\ApiCore\GapicClientTrait;
 use Google\ApiCore\PathTemplate;
+use Google\ApiCore\RetrySettings;
+use Google\ApiCore\Transport\TransportInterface;
 use Google\ApiCore\ValidationException;
+use Google\Auth\CredentialsLoader;
 use Google\Cloud\Dlp\V2beta2\AnalyzeDataSourceRiskRequest;
 use Google\Cloud\Dlp\V2beta2\CancelDlpJobRequest;
 use Google\Cloud\Dlp\V2beta2\ContentItem;
@@ -44,32 +45,42 @@ use Google\Cloud\Dlp\V2beta2\CreateDeidentifyTemplateRequest;
 use Google\Cloud\Dlp\V2beta2\CreateInspectTemplateRequest;
 use Google\Cloud\Dlp\V2beta2\DeidentifyConfig;
 use Google\Cloud\Dlp\V2beta2\DeidentifyContentRequest;
+use Google\Cloud\Dlp\V2beta2\DeidentifyContentResponse;
 use Google\Cloud\Dlp\V2beta2\DeidentifyTemplate;
 use Google\Cloud\Dlp\V2beta2\DeleteDeidentifyTemplateRequest;
 use Google\Cloud\Dlp\V2beta2\DeleteDlpJobRequest;
 use Google\Cloud\Dlp\V2beta2\DeleteInspectTemplateRequest;
+use Google\Cloud\Dlp\V2beta2\DlpJob;
 use Google\Cloud\Dlp\V2beta2\DlpJobType;
-use Google\Cloud\Dlp\V2beta2\DlpServiceGrpcClient;
 use Google\Cloud\Dlp\V2beta2\GetDeidentifyTemplateRequest;
 use Google\Cloud\Dlp\V2beta2\GetDlpJobRequest;
 use Google\Cloud\Dlp\V2beta2\GetInspectTemplateRequest;
 use Google\Cloud\Dlp\V2beta2\InspectConfig;
 use Google\Cloud\Dlp\V2beta2\InspectContentRequest;
+use Google\Cloud\Dlp\V2beta2\InspectContentResponse;
 use Google\Cloud\Dlp\V2beta2\InspectDataSourceRequest;
 use Google\Cloud\Dlp\V2beta2\InspectJobConfig;
 use Google\Cloud\Dlp\V2beta2\InspectTemplate;
 use Google\Cloud\Dlp\V2beta2\ListDeidentifyTemplatesRequest;
+use Google\Cloud\Dlp\V2beta2\ListDeidentifyTemplatesResponse;
 use Google\Cloud\Dlp\V2beta2\ListDlpJobsRequest;
+use Google\Cloud\Dlp\V2beta2\ListDlpJobsResponse;
 use Google\Cloud\Dlp\V2beta2\ListInfoTypesRequest;
+use Google\Cloud\Dlp\V2beta2\ListInfoTypesResponse;
 use Google\Cloud\Dlp\V2beta2\ListInspectTemplatesRequest;
+use Google\Cloud\Dlp\V2beta2\ListInspectTemplatesResponse;
 use Google\Cloud\Dlp\V2beta2\RedactImageRequest;
 use Google\Cloud\Dlp\V2beta2\RedactImageRequest_ImageRedactionConfig;
+use Google\Cloud\Dlp\V2beta2\RedactImageResponse;
 use Google\Cloud\Dlp\V2beta2\ReidentifyContentRequest;
+use Google\Cloud\Dlp\V2beta2\ReidentifyContentResponse;
 use Google\Cloud\Dlp\V2beta2\RiskAnalysisJobConfig;
 use Google\Cloud\Dlp\V2beta2\UpdateDeidentifyTemplateRequest;
 use Google\Cloud\Dlp\V2beta2\UpdateInspectTemplateRequest;
-use Google\Cloud\Version;
 use Google\Protobuf\FieldMask;
+use Google\Protobuf\GPBEmpty;
+use Grpc\Channel;
+use Grpc\ChannelCredentials;
 
 /**
  * Service Description: The DLP API is a service that allows clients
@@ -79,8 +90,8 @@ use Google\Protobuf\FieldMask;
  * The service also includes methods for sensitive data redaction and
  * scheduling of data scans on Google Cloud Platform based data sets.
  *
- * EXPERIMENTAL: this client library class has not yet been declared GA (1.0). This means that
- * even though we intent the surface to be stable, we may make backwards incompatible changes
+ * EXPERIMENTAL: This client library class has not yet been declared GA (1.0). This means that
+ * even though we intend the surface to be stable, we may make backwards incompatible changes
  * if necessary.
  *
  * This class provides the ability to make remote calls to the backing service through method
@@ -105,6 +116,13 @@ use Google\Protobuf\FieldMask;
  */
 class DlpServiceGapicClient
 {
+    use GapicClientTrait;
+
+    /**
+     * The name of the service.
+     */
+    const SERVICE_NAME = 'google.privacy.dlp.v2beta2.DlpService';
+
     /**
      * The default address of the service.
      */
@@ -133,14 +151,22 @@ class DlpServiceGapicClient
     private static $projectNameTemplate;
     private static $dlpJobNameTemplate;
     private static $pathTemplateMap;
-    private static $gapicVersion;
-    private static $gapicVersionLoaded = false;
 
-    protected $grpcCredentialsHelper;
-    protected $dlpServiceStub;
-    private $scopes;
-    private $defaultCallSettings;
-    private $descriptors;
+    private static function getClientDefaults()
+    {
+        return [
+            'serviceName' => self::SERVICE_NAME,
+            'serviceAddress' => self::SERVICE_ADDRESS,
+            'port' => self::DEFAULT_SERVICE_PORT,
+            'scopes' => [
+                'https://www.googleapis.com/auth/cloud-platform',
+            ],
+            'clientConfigPath' => __DIR__.'/../resources/dlp_service_client_config.json',
+            'restClientConfigPath' => __DIR__.'/../resources/dlp_service_rest_client_config.php',
+            'descriptorsConfigPath' => __DIR__.'/../resources/dlp_service_descriptor_config.php',
+            'versionFile' => __DIR__.'/../../VERSION',
+        ];
+    }
 
     private static function getOrganizationNameTemplate()
     {
@@ -220,59 +246,6 @@ class DlpServiceGapicClient
         }
 
         return self::$pathTemplateMap;
-    }
-
-    private static function getPageStreamingDescriptors()
-    {
-        $listInspectTemplatesPageStreamingDescriptor =
-                new PageStreamingDescriptor([
-                    'requestPageTokenGetMethod' => 'getPageToken',
-                    'requestPageTokenSetMethod' => 'setPageToken',
-                    'requestPageSizeGetMethod' => 'getPageSize',
-                    'requestPageSizeSetMethod' => 'setPageSize',
-                    'responsePageTokenGetMethod' => 'getNextPageToken',
-                    'resourcesGetMethod' => 'getInspectTemplates',
-                ]);
-        $listDeidentifyTemplatesPageStreamingDescriptor =
-                new PageStreamingDescriptor([
-                    'requestPageTokenGetMethod' => 'getPageToken',
-                    'requestPageTokenSetMethod' => 'setPageToken',
-                    'requestPageSizeGetMethod' => 'getPageSize',
-                    'requestPageSizeSetMethod' => 'setPageSize',
-                    'responsePageTokenGetMethod' => 'getNextPageToken',
-                    'resourcesGetMethod' => 'getDeidentifyTemplates',
-                ]);
-        $listDlpJobsPageStreamingDescriptor =
-                new PageStreamingDescriptor([
-                    'requestPageTokenGetMethod' => 'getPageToken',
-                    'requestPageTokenSetMethod' => 'setPageToken',
-                    'requestPageSizeGetMethod' => 'getPageSize',
-                    'requestPageSizeSetMethod' => 'setPageSize',
-                    'responsePageTokenGetMethod' => 'getNextPageToken',
-                    'resourcesGetMethod' => 'getJobs',
-                ]);
-
-        $pageStreamingDescriptors = [
-            'listInspectTemplates' => $listInspectTemplatesPageStreamingDescriptor,
-            'listDeidentifyTemplates' => $listDeidentifyTemplatesPageStreamingDescriptor,
-            'listDlpJobs' => $listDlpJobsPageStreamingDescriptor,
-        ];
-
-        return $pageStreamingDescriptors;
-    }
-
-    private static function getGapicVersion()
-    {
-        if (!self::$gapicVersionLoaded) {
-            if (file_exists(__DIR__.'/../VERSION')) {
-                self::$gapicVersion = trim(file_get_contents(__DIR__.'/../VERSION'));
-            } elseif (class_exists(Version::class)) {
-                self::$gapicVersion = Version::VERSION;
-            }
-            self::$gapicVersionLoaded = true;
-        }
-
-        return self::$gapicVersion;
     }
 
     /**
@@ -453,18 +426,21 @@ class DlpServiceGapicClient
      *     @type string $serviceAddress The domain name of the API remote host.
      *                                  Default 'dlp.googleapis.com'.
      *     @type mixed $port The port on which to connect to the remote host. Default 443.
-     *     @type \Grpc\Channel $channel
-     *           A `Channel` object to be used by gRPC. If not specified, a channel will be constructed.
-     *     @type \Grpc\ChannelCredentials $sslCreds
+     *     @type Channel $channel
+     *           A `Channel` object. If not specified, a channel will be constructed.
+     *           NOTE: This option is only valid when utilizing the gRPC transport.
+     *     @type ChannelCredentials $sslCreds
      *           A `ChannelCredentials` object for use with an SSL-enabled channel.
      *           Default: a credentials object returned from
-     *           \Grpc\ChannelCredentials::createSsl()
-     *           NOTE: if the $channel optional argument is specified, then this argument is unused.
+     *           \Grpc\ChannelCredentials::createSsl().
+     *           NOTE: This option is only valid when utilizing the gRPC transport. Also, if the $channel
+     *           optional argument is specified, then this argument is unused.
      *     @type bool $forceNewChannel
      *           If true, this forces gRPC to create a new channel instead of using a persistent channel.
      *           Defaults to false.
-     *           NOTE: if the $channel optional argument is specified, then this option is unused.
-     *     @type \Google\Auth\CredentialsLoader $credentialsLoader
+     *           NOTE: This option is only valid when utilizing the gRPC transport. Also, if the $channel
+     *           optional argument is specified, then this option is unused.
+     *     @type CredentialsLoader $credentialsLoader
      *           A CredentialsLoader object created using the Google\Auth library.
      *     @type string[] $scopes A string array of scopes to use when acquiring credentials.
      *                          Defaults to the scopes for the DLP API.
@@ -482,85 +458,22 @@ class DlpServiceGapicClient
      *           for example usage. Passing a value of null is equivalent to a value of
      *           ['retriesEnabled' => false]. Retry settings provided in this setting override the
      *           settings in $clientConfigPath.
+     *     @type callable $authHttpHandler A handler used to deliver PSR-7 requests specifically
+     *           for authentication. Should match a signature of
+     *           `function (RequestInterface $request, array $options) : ResponseInterface`.
+     *     @type callable $httpHandler A handler used to deliver PSR-7 requests. Should match a
+     *           signature of `function (RequestInterface $request, array $options) : PromiseInterface`.
+     *           NOTE: This option is only valid when utilizing the REST transport.
+     *     @type string|TransportInterface $transport The transport used for executing network
+     *           requests. May be either the string `rest` or `grpc`. Additionally, it is possible
+     *           to pass in an already instantiated transport. Defaults to `grpc` if gRPC support is
+     *           detected on the system.
      * }
      * @experimental
      */
     public function __construct($options = [])
     {
-        $defaultOptions = [
-            'serviceAddress' => self::SERVICE_ADDRESS,
-            'port' => self::DEFAULT_SERVICE_PORT,
-            'scopes' => [
-                'https://www.googleapis.com/auth/cloud-platform',
-            ],
-            'retryingOverride' => null,
-            'libName' => null,
-            'libVersion' => null,
-            'clientConfigPath' => __DIR__.'/../resources/dlp_service_client_config.json',
-        ];
-        $options = array_merge($defaultOptions, $options);
-
-        $gapicVersion = $options['libVersion'] ?: self::getGapicVersion();
-
-        $headerDescriptor = new AgentHeaderDescriptor([
-            'libName' => $options['libName'],
-            'libVersion' => $options['libVersion'],
-            'gapicVersion' => $gapicVersion,
-        ]);
-
-        $defaultDescriptors = ['headerDescriptor' => $headerDescriptor];
-        $this->descriptors = [
-            'inspectContent' => $defaultDescriptors,
-            'redactImage' => $defaultDescriptors,
-            'deidentifyContent' => $defaultDescriptors,
-            'reidentifyContent' => $defaultDescriptors,
-            'inspectDataSource' => $defaultDescriptors,
-            'analyzeDataSourceRisk' => $defaultDescriptors,
-            'listInfoTypes' => $defaultDescriptors,
-            'createInspectTemplate' => $defaultDescriptors,
-            'updateInspectTemplate' => $defaultDescriptors,
-            'getInspectTemplate' => $defaultDescriptors,
-            'listInspectTemplates' => $defaultDescriptors,
-            'deleteInspectTemplate' => $defaultDescriptors,
-            'createDeidentifyTemplate' => $defaultDescriptors,
-            'updateDeidentifyTemplate' => $defaultDescriptors,
-            'getDeidentifyTemplate' => $defaultDescriptors,
-            'listDeidentifyTemplates' => $defaultDescriptors,
-            'deleteDeidentifyTemplate' => $defaultDescriptors,
-            'listDlpJobs' => $defaultDescriptors,
-            'getDlpJob' => $defaultDescriptors,
-            'deleteDlpJob' => $defaultDescriptors,
-            'cancelDlpJob' => $defaultDescriptors,
-        ];
-        $pageStreamingDescriptors = self::getPageStreamingDescriptors();
-        foreach ($pageStreamingDescriptors as $method => $pageStreamingDescriptor) {
-            $this->descriptors[$method]['pageStreamingDescriptor'] = $pageStreamingDescriptor;
-        }
-
-        $clientConfigJsonString = file_get_contents($options['clientConfigPath']);
-        $clientConfig = json_decode($clientConfigJsonString, true);
-        $this->defaultCallSettings =
-                CallSettings::load(
-                    'google.privacy.dlp.v2beta2.DlpService',
-                    $clientConfig,
-                    $options['retryingOverride']
-                );
-
-        $this->scopes = $options['scopes'];
-
-        $createStubOptions = [];
-        if (array_key_exists('sslCreds', $options)) {
-            $createStubOptions['sslCreds'] = $options['sslCreds'];
-        }
-        $this->grpcCredentialsHelper = new GrpcCredentialsHelper($options);
-
-        $createDlpServiceStubFunction = function ($hostname, $opts, $channel) {
-            return new DlpServiceGrpcClient($hostname, $opts, $channel);
-        };
-        if (array_key_exists('createDlpServiceStubFunction', $options)) {
-            $createDlpServiceStubFunction = $options['createDlpServiceStubFunction'];
-        }
-        $this->dlpServiceStub = $this->grpcCredentialsHelper->createStub($createDlpServiceStubFunction);
+        $this->setClientOptions($options + self::getClientDefaults());
     }
 
     /**
@@ -595,7 +508,7 @@ class DlpServiceGapicClient
      *          that are set in this request will replace their corresponding fields in the
      *          template. Repeated fields are appended. Singular sub-messages and groups
      *          are recursively merged.
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -604,7 +517,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\Cloud\Dlp\V2beta2\InspectContentResponse
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function inspectContent($parent, $optionalArgs = [])
@@ -621,24 +534,12 @@ class DlpServiceGapicClient
             $request->setInspectTemplateName($optionalArgs['inspectTemplateName']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['inspectContent'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'InspectContent',
-            $mergedSettings,
-            $this->descriptors['inspectContent']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            InspectContentResponse::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -670,7 +571,7 @@ class DlpServiceGapicClient
      *          The bytes of the image to redact.
      *     @type RedactImageRequest_ImageRedactionConfig[] $imageRedactionConfigs
      *          The configuration for specifying what content to redact from images.
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -679,7 +580,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\Cloud\Dlp\V2beta2\RedactImageResponse
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function redactImage($parent, $optionalArgs = [])
@@ -699,24 +600,12 @@ class DlpServiceGapicClient
             $request->setImageRedactionConfigs($optionalArgs['imageRedactionConfigs']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['redactImage'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'RedactImage',
-            $mergedSettings,
-            $this->descriptors['redactImage']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            RedactImageResponse::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -761,7 +650,7 @@ class DlpServiceGapicClient
      *          that are set in this request will replace their corresponding fields in the
      *          template. Repeated fields are appended. Singular sub-messages and groups
      *          are recursively merged.
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -770,7 +659,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\Cloud\Dlp\V2beta2\DeidentifyContentResponse
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function deidentifyContent($parent, $optionalArgs = [])
@@ -793,24 +682,12 @@ class DlpServiceGapicClient
             $request->setDeidentifyTemplateName($optionalArgs['deidentifyTemplateName']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['deidentifyContent'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'DeidentifyContent',
-            $mergedSettings,
-            $this->descriptors['deidentifyContent']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            DeidentifyContentResponse::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -858,7 +735,7 @@ class DlpServiceGapicClient
      *          that are set in this request will replace their corresponding fields in the
      *          template. Repeated fields are appended. Singular sub-messages and groups
      *          are recursively merged.
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -867,7 +744,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\Cloud\Dlp\V2beta2\ReidentifyContentResponse
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function reidentifyContent($parent, $optionalArgs = [])
@@ -890,24 +767,12 @@ class DlpServiceGapicClient
             $request->setReidentifyTemplateName($optionalArgs['reidentifyTemplateName']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['reidentifyContent'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'ReidentifyContent',
-            $mergedSettings,
-            $this->descriptors['reidentifyContent']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            ReidentifyContentResponse::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -931,7 +796,7 @@ class DlpServiceGapicClient
      *
      *     @type InspectJobConfig $jobConfig
      *          A configuration for the job.
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -940,7 +805,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\Cloud\Dlp\V2beta2\DlpJob
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function inspectDataSource($parent, $optionalArgs = [])
@@ -951,24 +816,12 @@ class DlpServiceGapicClient
             $request->setJobConfig($optionalArgs['jobConfig']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['inspectDataSource'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'InspectDataSource',
-            $mergedSettings,
-            $this->descriptors['inspectDataSource']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            DlpJob::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -992,7 +845,7 @@ class DlpServiceGapicClient
      *
      *     @type RiskAnalysisJobConfig $jobConfig
      *          Configuration for this risk analysis job.
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -1001,7 +854,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\Cloud\Dlp\V2beta2\DlpJob
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function analyzeDataSourceRisk($parent, $optionalArgs = [])
@@ -1012,24 +865,12 @@ class DlpServiceGapicClient
             $request->setJobConfig($optionalArgs['jobConfig']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['analyzeDataSourceRisk'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'AnalyzeDataSourceRisk',
-            $mergedSettings,
-            $this->descriptors['analyzeDataSourceRisk']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            DlpJob::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -1056,7 +897,7 @@ class DlpServiceGapicClient
      *     @type string $filter
      *          Optional filter to only return infoTypes supported by certain parts of the
      *          API. Defaults to supported_by=INSPECT.
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -1065,7 +906,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\Cloud\Dlp\V2beta2\ListInfoTypesResponse
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function listInfoTypes($optionalArgs = [])
@@ -1078,24 +919,12 @@ class DlpServiceGapicClient
             $request->setFilter($optionalArgs['filter']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['listInfoTypes'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'ListInfoTypes',
-            $mergedSettings,
-            $this->descriptors['listInfoTypes']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            ListInfoTypesResponse::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -1125,7 +954,7 @@ class DlpServiceGapicClient
      *          numbers, and hyphens; that is, it must match the regular
      *          expression: `[a-zA-Z\\d-]+`. The maximum length is 100
      *          characters. Can be empty to allow the system to generate one.
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -1134,7 +963,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\Cloud\Dlp\V2beta2\InspectTemplate
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function createInspectTemplate($parent, $optionalArgs = [])
@@ -1148,24 +977,12 @@ class DlpServiceGapicClient
             $request->setTemplateId($optionalArgs['templateId']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['createInspectTemplate'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'CreateInspectTemplate',
-            $mergedSettings,
-            $this->descriptors['createInspectTemplate']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            InspectTemplate::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -1191,7 +1008,7 @@ class DlpServiceGapicClient
      *          New InspectTemplate value.
      *     @type FieldMask $updateMask
      *          Mask to control which fields get updated.
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -1200,7 +1017,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\Cloud\Dlp\V2beta2\InspectTemplate
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function updateInspectTemplate($name, $optionalArgs = [])
@@ -1214,24 +1031,12 @@ class DlpServiceGapicClient
             $request->setUpdateMask($optionalArgs['updateMask']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['updateInspectTemplate'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'UpdateInspectTemplate',
-            $mergedSettings,
-            $this->descriptors['updateInspectTemplate']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            InspectTemplate::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -1254,7 +1059,7 @@ class DlpServiceGapicClient
      *     @type string $name
      *          Resource name of the organization and inspectTemplate to be read, for
      *          example `organizations/433245324/inspectTemplates/432452342`.
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -1263,7 +1068,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\Cloud\Dlp\V2beta2\InspectTemplate
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function getInspectTemplate($optionalArgs = [])
@@ -1273,24 +1078,12 @@ class DlpServiceGapicClient
             $request->setName($optionalArgs['name']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['getInspectTemplate'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'GetInspectTemplate',
-            $mergedSettings,
-            $this->descriptors['getInspectTemplate']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            InspectTemplate::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -1333,7 +1126,7 @@ class DlpServiceGapicClient
      *          The maximum number of resources contained in the underlying API
      *          response. The API may return fewer values in a page, even if
      *          there are additional values to be retrieved.
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -1342,7 +1135,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\ApiCore\PagedListResponse
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function listInspectTemplates($parent, $optionalArgs = [])
@@ -1356,24 +1149,12 @@ class DlpServiceGapicClient
             $request->setPageSize($optionalArgs['pageSize']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['listInspectTemplates'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->getPagedListResponse(
             'ListInspectTemplates',
-            $mergedSettings,
-            $this->descriptors['listInspectTemplates']
+            $optionalArgs,
+            ListInspectTemplatesResponse::class,
+            $request
         );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
     }
 
     /**
@@ -1395,14 +1176,14 @@ class DlpServiceGapicClient
      * @param array  $optionalArgs {
      *                             Optional.
      *
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
      *          {@see Google\ApiCore\RetrySettings} for example usage.
      * }
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function deleteInspectTemplate($name, $optionalArgs = [])
@@ -1410,24 +1191,12 @@ class DlpServiceGapicClient
         $request = new DeleteInspectTemplateRequest();
         $request->setName($name);
 
-        $defaultCallSettings = $this->defaultCallSettings['deleteInspectTemplate'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'DeleteInspectTemplate',
-            $mergedSettings,
-            $this->descriptors['deleteInspectTemplate']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            GPBEmpty::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -1457,7 +1226,7 @@ class DlpServiceGapicClient
      *          numbers, and hyphens; that is, it must match the regular
      *          expression: `[a-zA-Z\\d-]+`. The maximum length is 100
      *          characters. Can be empty to allow the system to generate one.
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -1466,7 +1235,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\Cloud\Dlp\V2beta2\DeidentifyTemplate
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function createDeidentifyTemplate($parent, $optionalArgs = [])
@@ -1480,24 +1249,12 @@ class DlpServiceGapicClient
             $request->setTemplateId($optionalArgs['templateId']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['createDeidentifyTemplate'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'CreateDeidentifyTemplate',
-            $mergedSettings,
-            $this->descriptors['createDeidentifyTemplate']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            DeidentifyTemplate::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -1523,7 +1280,7 @@ class DlpServiceGapicClient
      *          New DeidentifyTemplate value.
      *     @type FieldMask $updateMask
      *          Mask to control which fields get updated.
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -1532,7 +1289,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\Cloud\Dlp\V2beta2\DeidentifyTemplate
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function updateDeidentifyTemplate($name, $optionalArgs = [])
@@ -1546,24 +1303,12 @@ class DlpServiceGapicClient
             $request->setUpdateMask($optionalArgs['updateMask']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['updateDeidentifyTemplate'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'UpdateDeidentifyTemplate',
-            $mergedSettings,
-            $this->descriptors['updateDeidentifyTemplate']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            DeidentifyTemplate::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -1585,7 +1330,7 @@ class DlpServiceGapicClient
      * @param array  $optionalArgs {
      *                             Optional.
      *
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -1594,7 +1339,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\Cloud\Dlp\V2beta2\DeidentifyTemplate
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function getDeidentifyTemplate($name, $optionalArgs = [])
@@ -1602,24 +1347,12 @@ class DlpServiceGapicClient
         $request = new GetDeidentifyTemplateRequest();
         $request->setName($name);
 
-        $defaultCallSettings = $this->defaultCallSettings['getDeidentifyTemplate'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'GetDeidentifyTemplate',
-            $mergedSettings,
-            $this->descriptors['getDeidentifyTemplate']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            DeidentifyTemplate::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -1662,7 +1395,7 @@ class DlpServiceGapicClient
      *          The maximum number of resources contained in the underlying API
      *          response. The API may return fewer values in a page, even if
      *          there are additional values to be retrieved.
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -1671,7 +1404,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\ApiCore\PagedListResponse
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function listDeidentifyTemplates($parent, $optionalArgs = [])
@@ -1685,24 +1418,12 @@ class DlpServiceGapicClient
             $request->setPageSize($optionalArgs['pageSize']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['listDeidentifyTemplates'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->getPagedListResponse(
             'ListDeidentifyTemplates',
-            $mergedSettings,
-            $this->descriptors['listDeidentifyTemplates']
+            $optionalArgs,
+            ListDeidentifyTemplatesResponse::class,
+            $request
         );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
     }
 
     /**
@@ -1724,14 +1445,14 @@ class DlpServiceGapicClient
      * @param array  $optionalArgs {
      *                             Optional.
      *
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
      *          {@see Google\ApiCore\RetrySettings} for example usage.
      * }
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function deleteDeidentifyTemplate($name, $optionalArgs = [])
@@ -1739,24 +1460,12 @@ class DlpServiceGapicClient
         $request = new DeleteDeidentifyTemplateRequest();
         $request->setName($name);
 
-        $defaultCallSettings = $this->defaultCallSettings['deleteDeidentifyTemplate'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'DeleteDeidentifyTemplate',
-            $mergedSettings,
-            $this->descriptors['deleteDeidentifyTemplate']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            GPBEmpty::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -1824,7 +1533,7 @@ class DlpServiceGapicClient
      *     @type int $type
      *          The type of job. Defaults to `DlpJobType.INSPECT`
      *          For allowed values, use constants defined on {@see \Google\Cloud\Dlp\V2beta2\DlpJobType}
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -1833,7 +1542,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\ApiCore\PagedListResponse
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function listDlpJobs($parent, $optionalArgs = [])
@@ -1853,24 +1562,12 @@ class DlpServiceGapicClient
             $request->setType($optionalArgs['type']);
         }
 
-        $defaultCallSettings = $this->defaultCallSettings['listDlpJobs'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->getPagedListResponse(
             'ListDlpJobs',
-            $mergedSettings,
-            $this->descriptors['listDlpJobs']
+            $optionalArgs,
+            ListDlpJobsResponse::class,
+            $request
         );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
     }
 
     /**
@@ -1891,7 +1588,7 @@ class DlpServiceGapicClient
      * @param array  $optionalArgs {
      *                             Optional.
      *
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
@@ -1900,7 +1597,7 @@ class DlpServiceGapicClient
      *
      * @return \Google\Cloud\Dlp\V2beta2\DlpJob
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function getDlpJob($name, $optionalArgs = [])
@@ -1908,24 +1605,12 @@ class DlpServiceGapicClient
         $request = new GetDlpJobRequest();
         $request->setName($name);
 
-        $defaultCallSettings = $this->defaultCallSettings['getDlpJob'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'GetDlpJob',
-            $mergedSettings,
-            $this->descriptors['getDlpJob']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            DlpJob::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -1948,14 +1633,14 @@ class DlpServiceGapicClient
      * @param array  $optionalArgs {
      *                             Optional.
      *
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
      *          {@see Google\ApiCore\RetrySettings} for example usage.
      * }
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function deleteDlpJob($name, $optionalArgs = [])
@@ -1963,24 +1648,12 @@ class DlpServiceGapicClient
         $request = new DeleteDlpJobRequest();
         $request->setName($name);
 
-        $defaultCallSettings = $this->defaultCallSettings['deleteDlpJob'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'DeleteDlpJob',
-            $mergedSettings,
-            $this->descriptors['deleteDlpJob']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
+            GPBEmpty::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 
     /**
@@ -2003,14 +1676,14 @@ class DlpServiceGapicClient
      * @param array  $optionalArgs {
      *                             Optional.
      *
-     *     @type \Google\ApiCore\RetrySettings|array $retrySettings
+     *     @type RetrySettings|array $retrySettings
      *          Retry settings to use for this call. Can be a
      *          {@see Google\ApiCore\RetrySettings} object, or an associative array
      *          of retry settings parameters. See the documentation on
      *          {@see Google\ApiCore\RetrySettings} for example usage.
      * }
      *
-     * @throws \Google\ApiCore\ApiException if the remote call fails
+     * @throws ApiException if the remote call fails
      * @experimental
      */
     public function cancelDlpJob($name, $optionalArgs = [])
@@ -2018,39 +1691,11 @@ class DlpServiceGapicClient
         $request = new CancelDlpJobRequest();
         $request->setName($name);
 
-        $defaultCallSettings = $this->defaultCallSettings['cancelDlpJob'];
-        if (isset($optionalArgs['retrySettings']) && is_array($optionalArgs['retrySettings'])) {
-            $optionalArgs['retrySettings'] = $defaultCallSettings->getRetrySettings()->with(
-                $optionalArgs['retrySettings']
-            );
-        }
-        $mergedSettings = $defaultCallSettings->merge(new CallSettings($optionalArgs));
-        $callable = ApiCallable::createApiCall(
-            $this->dlpServiceStub,
+        return $this->startCall(
             'CancelDlpJob',
-            $mergedSettings,
-            $this->descriptors['cancelDlpJob']
-        );
-
-        return $callable(
-            $request,
-            [],
-            ['call_credentials_callback' => $this->createCredentialsCallback()]);
-    }
-
-    /**
-     * Initiates an orderly shutdown in which preexisting calls continue but new
-     * calls are immediately cancelled.
-     *
-     * @experimental
-     */
-    public function close()
-    {
-        $this->dlpServiceStub->close();
-    }
-
-    private function createCredentialsCallback()
-    {
-        return $this->grpcCredentialsHelper->createCallCredentialsCallback();
+            GPBEmpty::class,
+            $optionalArgs,
+            $request
+        )->wait();
     }
 }
