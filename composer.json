@@ -92,7 +92,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Google\\Cloud\\": "src"
+            "Google\\Cloud\\": "src",
+            "GPBMetadata\\Google\\": "metadata"
         }
     },
     "autoload-dev": {
