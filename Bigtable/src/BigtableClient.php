@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 namespace Google\Cloud\Bigtable;
 
 use Google\Auth\FetchAuthTokenInterface;
@@ -157,7 +156,7 @@ class BigtableClient
      *
      * Example:
      * ```
-     * $cluster = $bigtable->buildClusterMetadata('cluster-id', 'location-id');
+     * $cluster = $bigtable->buildClusterMetadata('my-cluster', 'us-east1-b');
      * ```
      * @param string $clusterId The cluster ID
      *        e.g., just `cluster-id` rather than `projects/project-id/instances/instance-id/clusters/cluster-id`.
@@ -182,14 +181,23 @@ class BigtableClient
     ) {
         $metaData = [];
         if (empty($clusterId)) {
-            throw new \InvalidArgumentException('Cluster id must be set');
+            throw new \InvalidArgumentException('Cluster id must be set.');
         }
         $metaData['clusterId'] = $clusterId;
 
         if (empty($locationId)) {
-            throw new \InvalidArgumentException('Location id must be set');
+            throw new \InvalidArgumentException('Location id must be set.');
         }
         $metaData['locationId'] = $locationId;
+
+        $storageTypes = [
+            Instance::STORAGE_TYPE_UNSPECIFIED,
+            Instance::STORAGE_TYPE_SSD,
+            Instance::STORAGE_TYPE_HDD
+        ];
+        if (!in_array($storageType, $storageTypes)) {
+            throw new \InvalidargumentException('Invalid storage type provided.');
+        }
         $metaData['defaultStorageType'] = $storageType;
 
         if ($serveNodes !== null) {

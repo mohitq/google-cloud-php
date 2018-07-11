@@ -38,7 +38,8 @@ use Google\Cloud\Core\LongRunning\LROTrait;
  *
  * $instance = $bigtable->instance('my-instance');
  * ```
- * @method resumeOperation() {
+ *
+ * @method LongRunningOperation resumeOperation() {
  *     Resume a Long Running Operation
  *
  *     Example:
@@ -93,7 +94,6 @@ class Instance
     private $info;
 
     /**
-     * Create an object representing a Cloud Bigtable instance.
      *
      * @param ConnectionInterface $connection The connection to the
      *        Cloud Bigtable Admin API.
@@ -230,9 +230,9 @@ class Instance
      *
      * @param array[] $clusterMetadataList Use {@see Google\Cloud\Bigtable\BigtableClient::buildClusterMetadata()}
      *        to create properly formatted cluster configurations.
-     *        API accepts a map where the cluster ID is the php array key.
      * @param array $options [optional] {
-     *     Configuration options
+     *        Configuration options
+     *
      *     @type string $displayName **Defaults to** the value of $instanceId.
      *     @type array $labels as key/value pair ['foo' => 'bar']. For more information, see
      *           [Using labels to organize Google Cloud Platform resources](https://cloudplatform.googleblog.com/2015/10/using-labels-to-organize-Google-Cloud-Platform-resources.html).
@@ -258,13 +258,13 @@ class Instance
         $clustersArray = [];
         foreach ($clusterMetadataList as $value) {
             if (!isset($value['clusterId'])) {
-                throw new \InvalidArgumentException('Cluster id must be set');
+                throw new \InvalidArgumentException('Cluster id must be set.');
             }
             $this->validate($value['clusterId'], 'cluster');
             $clusterId = $value['clusterId'];
 
             if (!isset($value['locationId'])) {
-                throw new \InvalidArgumentException('Location id must be set');
+                throw new \InvalidArgumentException('Location id must be set.');
             }
             $this->validate($value['locationId'], 'location');
             $locationId = $value['locationId'];
@@ -275,11 +275,12 @@ class Instance
                 ? $value['storageType']
                 : self::STORAGE_TYPE_UNSPECIFIED;
 
-            if ($type == self::INSTANCE_TYPE_DEVELOPMENT) {
+            if ($type === self::INSTANCE_TYPE_DEVELOPMENT) {
                 unset($value['serveNodes']);
             } elseif (!isset($value['serveNodes']) || $value['serveNodes'] <= 0) {
                 throw new \InvalidArgumentException('When creating Production instance, serveNodes must be > 0');
             }
+            // `$clustersArray` must be keyed by the cluster ID.
             $clustersArray[$clusterId] = $value;
         }
 

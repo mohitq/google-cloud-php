@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 namespace Google\Cloud\Bigtable\Tests\Snippet;
 
 use Google\Cloud\Bigtable\Admin\V2\BigtableInstanceAdminClient as InstanceAdminClient;
@@ -54,7 +53,7 @@ class InstanceTest extends SnippetTestCase
             [],
             self::PROJECT_ID,
             self::INSTANCE_ID
-        ], ['connection', 'lroConnection']);
+        ]);
     }
 
     public function testClass()
@@ -79,9 +78,8 @@ class InstanceTest extends SnippetTestCase
     {
         $snippet = $this->snippetFromMethod(Instance::class, 'id');
         $snippet->addLocal('instance', $this->instance);
-        $snippet->addLocal('id', self::INSTANCE_ID);
 
-        $res = $snippet->invoke('id');
+        $res = $snippet->invoke('instanceId');
         $this->assertEquals(self::INSTANCE_ID, $res->returnVal());
     }
 
