@@ -299,6 +299,23 @@ class Instance
     }
 
     /**
+     * Delete an instance.
+     *
+     * Example:
+     * ```
+     * $instance->delete();
+     * ```
+     *
+     * @return array
+     */
+    public function delete()
+    {
+        return $this->connection->deleteInstance([
+            'name' => $this->name
+        ]);
+    }
+
+    /**
      * Represent the class in a more readable and digestable fashion.
      *
      * @access private
