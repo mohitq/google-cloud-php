@@ -39,6 +39,7 @@ class GrpcTest extends TestCase
     use GrpcTrait;
 
     const PROJECT = 'projects/my-awesome-project';
+    const INSTANCE = 'projects/my-awesome-project/instances/my-instance';
     const LOCATION = 'projects/my-awesome-project/locations/us-east1-b';
 
     private $successMessage;
@@ -122,6 +123,11 @@ class GrpcTest extends TestCase
                 [self::PROJECT, $instanceName, $instance, ['test-cluster3' =>$cluster], ['headers' => ['google-cloud-resource-prefix' => [self::PROJECT]]]],
                 $lro,
                 null
+            ],
+            [
+                'deleteInstance',
+                ['name' => self::INSTANCE],
+                [self::INSTANCE, ['headers' => ['google-cloud-resource-prefix' => [self::INSTANCE]]]]
             ],
             [
                 'setIamPolicy',

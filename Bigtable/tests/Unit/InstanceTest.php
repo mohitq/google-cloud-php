@@ -211,4 +211,15 @@ class InstanceTest extends TestCase
         $this->assertInstanceOf(LongRunningOperation::class, $instance);
         $this->assertEquals(self::INSTANCE_NAME, $instance->name());
     }
+
+    public function testDelete()
+    {
+        $this->connection->deleteInstance(Argument::any())
+            ->shouldBeCalled()
+            ->willReturn([]);
+        $this->instance->___setProperty('connection', $this->connection->reveal());
+
+        $instance = $this->instance->delete();
+        $this->assertEquals([], $instance);
+    }
 }

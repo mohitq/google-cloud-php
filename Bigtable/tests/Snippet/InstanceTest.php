@@ -102,6 +102,17 @@ class InstanceTest extends SnippetTestCase
         $this->assertInstanceOf(LongRunningOperation::class, $res->returnVal());
     }
 
+    public function testDelete()
+    {
+        $snippet = $this->snippetFromMethod(Instance::class, 'delete');
+        $snippet->addLocal('instance', $this->instance);
+
+        $this->connection->deleteInstance(Argument::any())
+            ->shouldBeCalled();
+        $this->instance->___setProperty('connection', $this->connection->reveal());
+        $snippet->invoke();
+    }
+
     public function testResumeOperation()
     {
         $snippet = $this->snippetFromMagicMethod(Instance::class, 'resumeOperation');
