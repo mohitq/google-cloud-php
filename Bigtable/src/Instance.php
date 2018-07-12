@@ -94,7 +94,6 @@ class Instance
     private $info;
 
     /**
-     *
      * @param ConnectionInterface $connection The connection to the
      *        Cloud Bigtable Admin API.
      * @param LongRunningConnectionInterface $lroConnection An implementation
@@ -118,7 +117,7 @@ class Instance
     ) {
         $this->connection = $connection;
         $this->projectId = $projectId;
-        
+
         $this->validate($instanceId, 'instance');
         $this->name = InstanceAdminClient::instanceName($projectId, $instanceId);
         $this->id = $instanceId;
@@ -251,9 +250,9 @@ class Instance
             throw new \InvalidArgumentException('At least one clusterMetadata must be passed');
         }
         $projectName = InstanceAdminClient::projectName($this->projectId);
-        $displayName = isset($optins['displayName']) ? $optins['displayName'] : $this->id;
-        $labels = isset($optins['labels']) ? $optins['labels'] : [];
-        $type = isset($optins['type']) ? $optins['type'] : self::INSTANCE_TYPE_UNSPECIFIED;
+        $displayName = isset($options['displayName']) ? $options['displayName'] : $this->id;
+        $labels = isset($options['labels']) ? $options['labels'] : [];
+        $type = isset($options['type']) ? $options['type'] : self::INSTANCE_TYPE_UNSPECIFIED;
 
         $clustersArray = [];
         foreach ($clusterMetadataList as $value) {

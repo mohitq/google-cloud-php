@@ -221,14 +221,14 @@ class InstanceTest extends TestCase
         $this->assertEquals(self::INSTANCE_NAME, $instance->name());
         $this->assertEquals(self::INSTANCE_ID, $instance->info()['displayName']);
     }
-    
+
     public function testCreateWithDisplayNameOptions()
     {
         $args = [
             "parent" => self::PROJECT_NAME,
             "instanceId" => self::INSTANCE_ID,
             "instance" => [
-                "displayName" => self::INSTANCE_ID,
+                "displayName" => 'My Test Instance',
                 "type" => Instance::INSTANCE_TYPE_UNSPECIFIED,
                 "labels" => []
             ],
@@ -246,7 +246,7 @@ class InstanceTest extends TestCase
             ->shouldBeCalled()
             ->willReturn([
                 'name' => self::INSTANCE_NAME,
-                'displayName' => 'My Instance'
+                'displayName' => 'My Test Instance'
             ]);
         $this->instance->___setProperty('connection', $this->connection->reveal());
 
@@ -258,10 +258,10 @@ class InstanceTest extends TestCase
         );
         $instance = $this->instance->create(
             [$clusterMetadataList],
-            ['displayName' => 'My Instance']
+            ['displayName' => 'My Test Instance']
         );
         $this->assertInstanceOf(LongRunningOperation::class, $instance);
-        $this->assertEquals('My Instance', $instance->info()['displayName']);
+        $this->assertEquals('My Test Instance', $instance->info()['displayName']);
     }
 
     public function testCreateWithLabelsOptions()
@@ -270,9 +270,9 @@ class InstanceTest extends TestCase
             "parent" => self::PROJECT_NAME,
             "instanceId" => self::INSTANCE_ID,
             "instance" => [
-                "displayName" => self::INSTANCE_ID,
+                "displayName" => 'My Instance',
                 "type" => Instance::INSTANCE_TYPE_UNSPECIFIED,
-                "labels" => []
+                "labels" => ['foo' => 'bar']
             ],
             "clusters" => [
                 "my-cluster" => [
@@ -307,22 +307,21 @@ class InstanceTest extends TestCase
         $this->assertEquals(['foo' => 'bar'], $instance->info()['labels']);
     }
 
-    public function testCreateWithInstanceTypeOptions()
+    public function testCreateWithInstanceTypeDevelopmentWithServeNodeOptions()
     {
         $args = [
             "parent" => self::PROJECT_NAME,
             "instanceId" => self::INSTANCE_ID,
             "instance" => [
-                "displayName" => self::INSTANCE_ID,
-                "type" => Instance::INSTANCE_TYPE_UNSPECIFIED,
-                "labels" => []
+                "displayName" => 'My Instance',
+                "type" => Instance::INSTANCE_TYPE_DEVELOPMENT,
+                "labels" => ['foo' => 'bar']
             ],
             "clusters" => [
                 "my-cluster" => [
                     "clusterId" => self::CLUSTER_ID,
                     "locationId" => self::LOCATION_ID,
                     "defaultStorageType" => 0,
-                    "serveNodes" => 2,
                     "location" => self::LOCATION_NAME
                 ]
             ]

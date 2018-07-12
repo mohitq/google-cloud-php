@@ -61,7 +61,7 @@ class BigtableClientTest extends TestCase
             $instance->name()
         );
     }
-    
+
     /**
      * @expectedException \InvalidArgumentException
      * @expectedExceptionMessage Cluster id must be set.
@@ -82,10 +82,10 @@ class BigtableClientTest extends TestCase
 
     public function testbuildClusterMetadataWithoutStorageType()
     {
-        $instance = $this->client->buildClusterMetadata(self::CLUSTER_ID, self::LOCATION_ID);
-        $this->assertEquals($instance['clusterId'], self::CLUSTER_ID);
-        $this->assertEquals($instance['locationId'], self::LOCATION_ID);
-        $this->assertEquals($instance['defaultStorageType'], Instance::STORAGE_TYPE_UNSPECIFIED);
+        $cluster = $this->client->buildClusterMetadata(self::CLUSTER_ID, self::LOCATION_ID);
+        $this->assertEquals($cluster['clusterId'], self::CLUSTER_ID);
+        $this->assertEquals($cluster['locationId'], self::LOCATION_ID);
+        $this->assertEquals($cluster['defaultStorageType'], Instance::STORAGE_TYPE_UNSPECIFIED);
     }
 
     /**
@@ -99,28 +99,28 @@ class BigtableClientTest extends TestCase
 
     public function testbuildClusterMetadataWithStorageType()
     {
-        $instance = $this->client->buildClusterMetadata(
+        $cluster = $this->client->buildClusterMetadata(
             self::CLUSTER_ID,
             self::LOCATION_ID,
             Instance::STORAGE_TYPE_HDD
         );
-        $this->assertEquals($instance['clusterId'], self::CLUSTER_ID);
-        $this->assertEquals($instance['locationId'], self::LOCATION_ID);
-        $this->assertEquals($instance['defaultStorageType'], Instance::STORAGE_TYPE_HDD);
-        $this->assertFalse(array_key_exists('serveNodes', $instance));
+        $this->assertEquals($cluster['clusterId'], self::CLUSTER_ID);
+        $this->assertEquals($cluster['locationId'], self::LOCATION_ID);
+        $this->assertEquals($cluster['defaultStorageType'], Instance::STORAGE_TYPE_HDD);
+        $this->assertFalse(array_key_exists('serveNodes', $cluster));
     }
 
     public function testbuildClusterMetadataWithServeNodes()
     {
-        $instance = $this->client->buildClusterMetadata(
+        $cluster = $this->client->buildClusterMetadata(
             self::CLUSTER_ID,
             self::LOCATION_ID,
             Instance::STORAGE_TYPE_HDD,
             3
         );
-        $this->assertEquals($instance['clusterId'], self::CLUSTER_ID);
-        $this->assertEquals($instance['locationId'], self::LOCATION_ID);
-        $this->assertEquals($instance['defaultStorageType'], Instance::STORAGE_TYPE_HDD);
-        $this->assertEquals($instance['serveNodes'], 3);
+        $this->assertEquals($cluster['clusterId'], self::CLUSTER_ID);
+        $this->assertEquals($cluster['locationId'], self::LOCATION_ID);
+        $this->assertEquals($cluster['defaultStorageType'], Instance::STORAGE_TYPE_HDD);
+        $this->assertEquals($cluster['serveNodes'], 3);
     }
 }
