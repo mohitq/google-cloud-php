@@ -185,7 +185,7 @@ class InstanceTest extends TestCase
             "instanceId" => self::INSTANCE_ID,
             "instance" => [
                 "displayName" => self::INSTANCE_ID,
-                "type" => 0,
+                "type" => Instance::INSTANCE_TYPE_UNSPECIFIED,
                 "labels" => []
             ],
             "clusters" => [
@@ -217,7 +217,6 @@ class InstanceTest extends TestCase
         $instance = $this->instance->create(
             [$clusterMetadataList]
         );
-        print_r($instance);
         $this->assertInstanceOf(LongRunningOperation::class, $instance);
         $this->assertEquals(self::INSTANCE_NAME, $instance->name());
         $this->assertEquals(self::INSTANCE_ID, $instance->info()['displayName']);
@@ -226,12 +225,11 @@ class InstanceTest extends TestCase
     public function testCreateWithDisplayNameOptions()
     {
         $args = [
-            'displayName' => 'My Instance',
             "parent" => self::PROJECT_NAME,
             "instanceId" => self::INSTANCE_ID,
             "instance" => [
                 "displayName" => self::INSTANCE_ID,
-                "type" => 0,
+                "type" => Instance::INSTANCE_TYPE_UNSPECIFIED,
                 "labels" => []
             ],
             "clusters" => [
@@ -269,13 +267,11 @@ class InstanceTest extends TestCase
     public function testCreateWithLabelsOptions()
     {
         $args = [
-            'labels' => ['foo' => 'bar'],
-            'displayName' => 'My Instance',
             "parent" => self::PROJECT_NAME,
             "instanceId" => self::INSTANCE_ID,
             "instance" => [
                 "displayName" => self::INSTANCE_ID,
-                "type" => 0,
+                "type" => Instance::INSTANCE_TYPE_UNSPECIFIED,
                 "labels" => []
             ],
             "clusters" => [
@@ -314,14 +310,11 @@ class InstanceTest extends TestCase
     public function testCreateWithInstanceTypeOptions()
     {
         $args = [
-            'type' => Instance::INSTANCE_TYPE_DEVELOPMENT,
-            'labels' => ['foo' => 'bar'],
-            'displayName' => 'My Instance',
             "parent" => self::PROJECT_NAME,
             "instanceId" => self::INSTANCE_ID,
             "instance" => [
                 "displayName" => self::INSTANCE_ID,
-                "type" => 0,
+                "type" => Instance::INSTANCE_TYPE_UNSPECIFIED,
                 "labels" => []
             ],
             "clusters" => [

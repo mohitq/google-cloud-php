@@ -284,14 +284,14 @@ class Instance
             $clustersArray[$clusterId] = $value;
         }
 
-        $operation = $this->connection->createInstance($options + [
+        $operation = $this->connection->createInstance([
             'parent' => $projectName,
             'instanceId' => $this->id,
             'instance' => [
                 'displayName' => $displayName,
                 'type' => $type,
                 'labels' => $labels
-            ],
+            ] + $options,
             'clusters' => $clustersArray
         ]);
 
