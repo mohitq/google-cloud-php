@@ -105,6 +105,7 @@ class Instance
      * @param string $projectId The project ID.
      * @param string $instanceId The instance ID.
      * @param array $info [optional] A representation of the instance object.
+     *
      * @throws \InvalidArgumentException if invalid argument
      */
     public function __construct(
@@ -160,7 +161,6 @@ class Instance
      *
      * This method may require a service call.
      *
-     *
      * @param array $options [optional] Configuration options.
      */
     public function info(array $options = [])
@@ -173,7 +173,6 @@ class Instance
      *
      * This method requires a service call.
      *
-     *
      * @param array $options [optional] Configuration options.
      */
     public function exists(array $options = [])
@@ -184,10 +183,11 @@ class Instance
     /**
      * Fetch a fresh representation of the instance from the service.
      *
-     *
      * @codingStandardsIgnoreStart
-     * @see https://cloud.google.com/bigtable/docs/reference/admin/rpc/google.bigtable.admin.v2#google.bigtable.admin.v2.GetInstanceRequest GetInstanceRequest
-     * @see https://cloud.google.com/bigtable/docs/reference/admin/rpc/google.bigtable.admin.v2#instance Instance
+     * @see https://cloud.google.com/bigtable/docs/reference/admin/rpc/
+     *     google.bigtable.admin.v2#google.bigtable.admin.v2.GetInstanceRequest GetInstanceRequest
+     * @see https://cloud.google.com/bigtable/docs/reference/admin/rpc/
+     *     google.bigtable.admin.v2#instance Instance
      * @codingStandardsIgnoreEnd
      *
      * @param array $options [optional] Configuration options.
@@ -204,7 +204,6 @@ class Instance
      * they are ready for use. This method allows for checking whether an
      * instance is ready.
      *
-     *
      * @param array $options [optional] Configuration options.
      */
     public function state(array $options = [])
@@ -213,6 +212,8 @@ class Instance
     }
 
     /**
+     * Create a new instance.
+     *
      * Example:
      * ```
      * use Google\Cloud\Bigtable\BigtableClient;
@@ -234,14 +235,17 @@ class Instance
      *
      *     @type string $displayName **Defaults to** the value of $instanceId.
      *     @type array $labels as key/value pair ['foo' => 'bar']. For more information, see
-     *           [Using labels to organize Google Cloud Platform resources](https://cloudplatform.googleblog.com/2015/10/using-labels-to-organize-Google-Cloud-Platform-resources.html).
+     *           [Using labels to organize Google Cloud Platform resources]
+     *           (https://cloudplatform.googleblog.com/2015/10/using-labels-to-organize-Google-Cloud-Platform-resources.html).
      *     @type int $type Possible values are represented by the following constants:
      *           `Google\Cloud\Bigtable\Instance::INSTANCE_TYPE_PRODUCTION`,
      *           `Google\Cloud\Bigtable\Instance::INSTANCE_TYPE_DEVELOPMENT` and
      *           `Google\Cloud\Bigtable\Instance::INSTANCE_TYPE_UNSPECIFIED`.
      *           **Defaults to** using `Google\Cloud\Bigtable\Instance::INSTANCE_TYPE_UNSPECIFIED`.
      * }
+     *
      * @return LongRunningOperation<Instance>
+     *
      * @throws \InvalidArgumentException
      */
     public function create(array $clusterMetadataList, array $options = [])
@@ -261,15 +265,12 @@ class Instance
             }
             $this->validate($value['clusterId'], 'cluster');
             $clusterId = $value['clusterId'];
-
             if (!isset($value['locationId'])) {
                 throw new \InvalidArgumentException('Location id must be set.');
             }
             $this->validate($value['locationId'], 'location');
             $locationId = $value['locationId'];
-
             $value['location'] = InstanceAdminClient::locationName($this->projectId, $locationId);
-
             $value['defaultStorageType'] = isset($value['storageType'])
                 ? $value['storageType']
                 : self::STORAGE_TYPE_UNSPECIFIED;
@@ -282,7 +283,6 @@ class Instance
             // `$clustersArray` must be keyed by the cluster ID.
             $clustersArray[$clusterId] = $value;
         }
-
         $operation = $this->connection->createInstance([
             'parent' => $projectName,
             'instanceId' => $this->id,
@@ -319,6 +319,7 @@ class Instance
      *
      * @param string $value value to be validated for emptiness or containing '/' character.
      * @param string $text type of value to be validated.
+     *
      * @throws \InvalidArgumentException
      */
     private function validate($value, $text)
