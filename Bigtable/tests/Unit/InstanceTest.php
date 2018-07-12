@@ -181,20 +181,20 @@ class InstanceTest extends TestCase
     public function testCreateWithoutOptions()
     {
         $args = [
-            "parent" => self::PROJECT_NAME,
-            "instanceId" => self::INSTANCE_ID,
-            "instance" => [
-                "displayName" => self::INSTANCE_ID,
-                "type" => Instance::INSTANCE_TYPE_UNSPECIFIED,
-                "labels" => []
+            'parent' => self::PROJECT_NAME,
+            'instanceId' => self::INSTANCE_ID,
+            'instance' => [
+                'displayName' => self::INSTANCE_ID,
+                'type' => Instance::INSTANCE_TYPE_UNSPECIFIED,
+                'labels' => []
             ],
-            "clusters" => [
-                "my-cluster" => [
-                    "clusterId" => self::CLUSTER_ID,
-                    "locationId" => self::LOCATION_ID,
-                    "defaultStorageType" => 0,
-                    "serveNodes" => 2,
-                    "location" => self::LOCATION_NAME
+            'clusters' => [
+                'my-cluster' => [
+                    'clusterId' => self::CLUSTER_ID,
+                    'locationId' => self::LOCATION_ID,
+                    'defaultStorageType' => 0,
+                    'serveNodes' => 2,
+                    'location' => self::LOCATION_NAME
                 ]
             ]
         ];
@@ -225,20 +225,20 @@ class InstanceTest extends TestCase
     public function testCreateWithDisplayNameOptions()
     {
         $args = [
-            "parent" => self::PROJECT_NAME,
-            "instanceId" => self::INSTANCE_ID,
-            "instance" => [
-                "displayName" => 'My Test Instance',
-                "type" => Instance::INSTANCE_TYPE_UNSPECIFIED,
-                "labels" => []
+            'parent' => self::PROJECT_NAME,
+            'instanceId' => self::INSTANCE_ID,
+            'instance' => [
+                'displayName' => 'My Test Instance',
+                'type' => Instance::INSTANCE_TYPE_UNSPECIFIED,
+                'labels' => []
             ],
-            "clusters" => [
-                "my-cluster" => [
-                    "clusterId" => self::CLUSTER_ID,
-                    "locationId" => self::LOCATION_ID,
-                    "defaultStorageType" => 0,
-                    "serveNodes" => 2,
-                    "location" => self::LOCATION_NAME
+            'clusters' => [
+                'my-cluster' => [
+                    'clusterId' => self::CLUSTER_ID,
+                    'locationId' => self::LOCATION_ID,
+                    'defaultStorageType' => 0,
+                    'serveNodes' => 2,
+                    'location' => self::LOCATION_NAME
                 ]
             ]
         ];
@@ -267,20 +267,20 @@ class InstanceTest extends TestCase
     public function testCreateWithLabelsOptions()
     {
         $args = [
-            "parent" => self::PROJECT_NAME,
-            "instanceId" => self::INSTANCE_ID,
-            "instance" => [
-                "displayName" => 'My Instance',
-                "type" => Instance::INSTANCE_TYPE_UNSPECIFIED,
-                "labels" => ['foo' => 'bar']
+            'parent' => self::PROJECT_NAME,
+            'instanceId' => self::INSTANCE_ID,
+            'instance' => [
+                'displayName' => 'My Instance',
+                'type' => Instance::INSTANCE_TYPE_UNSPECIFIED,
+                'labels' => ['foo' => 'bar']
             ],
-            "clusters" => [
-                "my-cluster" => [
-                    "clusterId" => self::CLUSTER_ID,
-                    "locationId" => self::LOCATION_ID,
-                    "defaultStorageType" => 0,
-                    "serveNodes" => 2,
-                    "location" => self::LOCATION_NAME
+            'clusters' => [
+                'my-cluster' => [
+                    'clusterId' => self::CLUSTER_ID,
+                    'locationId' => self::LOCATION_ID,
+                    'defaultStorageType' => 0,
+                    'serveNodes' => 2,
+                    'location' => self::LOCATION_NAME
                 ]
             ]
         ];
@@ -310,19 +310,19 @@ class InstanceTest extends TestCase
     public function testCreateWithInstanceTypeDevelopmentWithServeNodeOptions()
     {
         $args = [
-            "parent" => self::PROJECT_NAME,
-            "instanceId" => self::INSTANCE_ID,
-            "instance" => [
-                "displayName" => 'My Instance',
-                "type" => Instance::INSTANCE_TYPE_DEVELOPMENT,
-                "labels" => ['foo' => 'bar']
+            'parent' => self::PROJECT_NAME,
+            'instanceId' => self::INSTANCE_ID,
+            'instance' => [
+                'displayName' => 'My Instance',
+                'type' => Instance::INSTANCE_TYPE_DEVELOPMENT,
+                'labels' => ['foo' => 'bar']
             ],
-            "clusters" => [
-                "my-cluster" => [
-                    "clusterId" => self::CLUSTER_ID,
-                    "locationId" => self::LOCATION_ID,
-                    "defaultStorageType" => 0,
-                    "location" => self::LOCATION_NAME
+            'clusters' => [
+                'my-cluster' => [
+                    'clusterId' => self::CLUSTER_ID,
+                    'locationId' => self::LOCATION_ID,
+                    'defaultStorageType' => 0,
+                    'location' => self::LOCATION_NAME
                 ]
             ]
         ];

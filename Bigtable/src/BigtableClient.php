@@ -185,13 +185,7 @@ class BigtableClient
         $serveNodes = null
     ) {
         $metaData = [];
-        if (empty($clusterId)) {
-            throw new \InvalidArgumentException('Cluster id must be set.');
-        }
         $metaData['clusterId'] = $clusterId;
-        if (empty($locationId)) {
-            throw new \InvalidArgumentException('Location id must be set.');
-        }
         $metaData['locationId'] = $locationId;
         $storageTypes = [
             Instance::STORAGE_TYPE_UNSPECIFIED,

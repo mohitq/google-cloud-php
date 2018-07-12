@@ -62,30 +62,13 @@ class BigtableClientTest extends TestCase
         );
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Cluster id must be set.
-     */
-    public function testbuildClusterMetadataWithoutClusterId()
-    {
-        $this->client->buildClusterMetadata(null, null);
-    }
-
-    /**
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Location id must be set.
-     */
-    public function testbuildClusterMetadataWithoutLocationId()
-    {
-        $this->client->buildClusterMetadata(self::CLUSTER_ID, null);
-    }
-
     public function testbuildClusterMetadataWithoutStorageType()
     {
         $cluster = $this->client->buildClusterMetadata(self::CLUSTER_ID, self::LOCATION_ID);
         $this->assertEquals($cluster['clusterId'], self::CLUSTER_ID);
         $this->assertEquals($cluster['locationId'], self::LOCATION_ID);
         $this->assertEquals($cluster['defaultStorageType'], Instance::STORAGE_TYPE_UNSPECIFIED);
+        $this->assertFalse(array_key_exists('serveNodes', $cluster));
     }
 
     /**
