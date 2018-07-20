@@ -20,6 +20,7 @@ use Google\Cloud\Bigtable\Admin\V2\BigtableInstanceAdminClient as InstanceAdminC
 use Google\Cloud\Bigtable\BigtableClient;
 use Google\Cloud\Bigtable\Connection\ConnectionInterface;
 use Google\Cloud\Bigtable\Instance;
+use Google\Cloud\Bigtable\Table;
 use Google\Cloud\Core\LongRunning\LongRunningOperation;
 use Google\Cloud\Core\Testing\GrpcTestTrait;
 use Google\Cloud\Core\Testing\Snippet\SnippetTestCase;
@@ -38,8 +39,8 @@ class BigtableClientTest extends SnippetTestCase
     const INSTANCE_ID = 'my-instance';
     const INSTANCE_NAME = 'projects/my-awesome-project/instances/my-instance';
     const CLUSTER_ID = 'my-cluster';
-    const LOCATION_ID = 'us-east1-b';
     const LOCATION_NAME = 'projects/my-awesome-project/locations/us-east1-b';
+    const TABLE_NAME = 'projects/my-awesome-project/instances/my-instance/tables/my-table';
 
     private $client;
     private $connection;
@@ -70,13 +71,13 @@ class BigtableClientTest extends SnippetTestCase
         $this->assertEquals(self::INSTANCE_NAME, $res->returnVal()->name());
     }
 
-    public function testbuildClusterMetadata()
+    public function testTable()
     {
-        $snippet = $this->snippetFromMethod(BigtableClient::class, 'buildClusterMetadata');
+        $snippet = $this->snippetFromMethod(BigtableClient::class, 'table');
         $snippet->addLocal('bigtable', $this->client);
 
-        $res = $snippet->invoke('cluster');
-        $this->assertEquals(self::CLUSTER_ID, $res->returnVal()['clusterId']);
-        $this->assertEquals(self::LOCATION_ID, $res->returnVal()['locationId']);
+        $res = $snippet->invoke('table');
+        $this->assertInstanceOf(Table::class, $res->returnVal());
+        $this->assertEquals(self::TABLE_NAME, $res->returnVal()->name());
     }
 }

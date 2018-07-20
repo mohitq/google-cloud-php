@@ -17,10 +17,11 @@
 namespace Google\Cloud\Bigtable\Tests\Unit;
 
 use Google\Cloud\Bigtable\Admin\V2\BigtableInstanceAdminClient as InstanceAdminClient;
+use Google\Cloud\Bigtable\Admin\V2\BigtableTableAdminClient as TableAdminClient;
 use Google\Cloud\Bigtable\BigtableClient;
 use Google\Cloud\Bigtable\Connection\ConnectionInterface;
 use Google\Cloud\Bigtable\Instance;
-use Google\Cloud\Core\LongRunning\LongRunningOperation;
+use Google\Cloud\Bigtable\Table;
 use Google\Cloud\Core\Testing\GrpcTestTrait;
 use Google\Cloud\Core\Testing\TestHelpers;
 use PHPUnit\Framework\TestCase;
@@ -38,6 +39,7 @@ class BigtableClientTest extends TestCase
     const CLUSTER_ID = 'my-cluster';
     const LOCATION_ID = 'us-east1-b';
     const LOCATION_NAME = 'projects/my-awesome-project/locations/us-east1-b';
+    const TABLE_ID = 'my-table';
 
     private $client;
     private $connection;
@@ -62,48 +64,13 @@ class BigtableClientTest extends TestCase
         );
     }
 
-    public function testbuildClusterMetadataWithoutStorageType()
+    public function testTable()
     {
-        $cluster = $this->client->buildClusterMetadata(self::CLUSTER_ID, self::LOCATION_ID);
-        $this->assertEquals($cluster['clusterId'], self::CLUSTER_ID);
-        $this->assertEquals($cluster['locationId'], self::LOCATION_ID);
-        $this->assertEquals($cluster['defaultStorageType'], Instance::STORAGE_TYPE_UNSPECIFIED);
-        $this->assertFalse(array_key_exists('serveNodes', $cluster));
-    }
-
-    /**
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessage Invalid storage type provided.
-     */
-    public function testbuildClusterMetadataInvalidStorageType()
-    {
-        $this->client->buildClusterMetadata(self::CLUSTER_ID, self::LOCATION_ID, 3);
-    }
-
-    public function testbuildClusterMetadataWithStorageType()
-    {
-        $cluster = $this->client->buildClusterMetadata(
-            self::CLUSTER_ID,
-            self::LOCATION_ID,
-            Instance::STORAGE_TYPE_HDD
+        $table = $this->client->table(self::INSTANCE_ID, self::TABLE_ID);
+        $this->assertInstanceOf(Table::class, $table);
+        $this->assertEquals(
+            TableAdminClient::tableName(self::PROJECT_ID, self::INSTANCE_ID, self::TABLE_ID),
+            $table->name()
         );
-        $this->assertEquals($cluster['clusterId'], self::CLUSTER_ID);
-        $this->assertEquals($cluster['locationId'], self::LOCATION_ID);
-        $this->assertEquals($cluster['defaultStorageType'], Instance::STORAGE_TYPE_HDD);
-        $this->assertFalse(array_key_exists('serveNodes', $cluster));
-    }
-
-    public function testbuildClusterMetadataWithServeNodes()
-    {
-        $cluster = $this->client->buildClusterMetadata(
-            self::CLUSTER_ID,
-            self::LOCATION_ID,
-            Instance::STORAGE_TYPE_HDD,
-            3
-        );
-        $this->assertEquals($cluster['clusterId'], self::CLUSTER_ID);
-        $this->assertEquals($cluster['locationId'], self::LOCATION_ID);
-        $this->assertEquals($cluster['defaultStorageType'], Instance::STORAGE_TYPE_HDD);
-        $this->assertEquals($cluster['serveNodes'], 3);
     }
 }

@@ -23,6 +23,7 @@ use Google\ApiCore\Serializer;
 use Google\Cloud\Bigtable\Admin\V2\Instance;
 use Google\Cloud\Bigtable\Admin\V2\Instance_Type;
 use Google\Cloud\Bigtable\Admin\V2\Cluster;
+use Google\Cloud\Bigtable\Admin\V2\Table;
 use Google\Cloud\Bigtable\Connection\Grpc;
 use Google\Cloud\Core\GrpcTrait;
 use Google\Cloud\Core\GrpcRequestWrapper;
@@ -40,6 +41,8 @@ class GrpcTest extends TestCase
 
     const PROJECT = 'projects/my-awesome-project';
     const LOCATION = 'projects/my-awesome-project/locations/us-east1-b';
+    const INSTANCE = 'projects/my-awesome-project/instances/my-instance';
+    const TABLE    = 'projects/my-awesome-project/instances/my-instance/tables/my-table';
 
     private $successMessage;
 
@@ -101,6 +104,12 @@ class GrpcTest extends TestCase
         );
         $lro = $this->prophesize(OperationResponse::class)->reveal();
 
+        $tableId = 'my-table';
+        $table = $serializer->decodeMessage(
+            new Table(),
+            []
+        );
+
         return [
             [
                 'createInstance',
@@ -122,6 +131,19 @@ class GrpcTest extends TestCase
                 [self::PROJECT, $instanceName, $instance, ['test-cluster3' =>$cluster], ['headers' => ['google-cloud-resource-prefix' => [self::PROJECT]]]],
                 $lro,
                 null
+            ],
+            [
+                'createTable',
+                [
+                    'parent' => self::INSTANCE,
+                    'tableId' => $tableId
+                ],
+                [self::INSTANCE, $tableId, $table, ['headers' => ['google-cloud-resource-prefix' => [self::INSTANCE]]]]
+            ],
+            [
+                'deleteTable',
+                ['name' => self::TABLE],
+                [self::TABLE, ['headers' => ['google-cloud-resource-prefix' => [self::TABLE]]]]
             ],
             [
                 'setIamPolicy',

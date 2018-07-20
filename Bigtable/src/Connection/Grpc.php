@@ -22,6 +22,7 @@ use Google\Cloud\Bigtable\Admin\V2\BigtableInstanceAdminClient;
 use Google\Cloud\Bigtable\Admin\V2\BigtableTableAdminClient;
 use Google\Cloud\Bigtable\Admin\V2\Cluster;
 use Google\Cloud\Bigtable\Admin\V2\Instance;
+use Google\Cloud\Bigtable\Admin\V2\Table;
 use Google\Cloud\Bigtable\V2\BigtableClient;
 use Google\Cloud\Core\GrpcRequestWrapper;
 use Google\Cloud\Core\GrpcTrait;
@@ -289,7 +290,13 @@ class Grpc implements ConnectionInterface
      */
     public function createTable(array $args)
     {
-        throw new \BadMethodCallException('This method is not implemented yet');
+        $parent = $this->pluck('parent', $args);
+        return $this->send([$this->bigtableTableAdminClient, 'createTable'], [
+            $parent,
+            $this->pluck('tableId', $args),
+            new Table(),
+            $this->addResourcePrefixHeader($args, $parent)
+        ]);
     }
 
     /**
@@ -313,7 +320,11 @@ class Grpc implements ConnectionInterface
      */
     public function getTable(array $args)
     {
-        throw new \BadMethodCallException('This method is not implemented yet');
+        $name = $this->pluck('name', $args);
+        return $this->send([$this->bigtableTableAdminClient, 'deleteTable'], [
+            $name,
+            $this->addResourcePrefixHeader($args, $name)
+        ]);
     }
 
     /**

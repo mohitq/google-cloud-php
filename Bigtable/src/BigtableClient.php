@@ -202,4 +202,30 @@ class BigtableClient
 
         return $metaData;
     }
+
+    /**
+     * Lazily instantiate a table.
+     *
+     * Example:
+     * ```
+     * $table = $bigtable->table('my-instance', 'my-table');
+     * ```
+     * @codingStandardsIgnoreStart
+     * @param string $instanceId The instance ID
+     * @param string $tableId The table ID
+     *
+     * @return Table
+     * @codingStandardsIgnoreEnd
+     */
+    public function table($instanceId, $tableId)
+    {
+        return new Table(
+            $this->connection,
+            $this->lroConnection,
+            $this->lroCallables,
+            $this->projectId,
+            $instanceId,
+            $tableId
+        );
+    }
 }
