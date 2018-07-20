@@ -226,10 +226,10 @@ class Table
      *
      * @throws \InvalidArgumentException
      */
-    public function create(array $options = [])
+    public function create()
     {
         $instanceName = TableAdminClient::instanceName($this->projectId, $this->instanceId);
-        $operation = $this->connection->createTable($options + [
+        $operation = $this->connection->createTable([
             'parent' => $instanceName,
             'tableId' => $this->id
         ]);
